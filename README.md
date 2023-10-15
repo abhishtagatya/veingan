@@ -15,8 +15,15 @@ pip install -r requirements.txt
 #### Download Dataset
 To download the dataset locally, use this script as follows.
 ```python
-python -m scripts.download <dataset>
+python -m scripts.download --dataset=<dataset> --target=<target>
 ```
+
+Parameter
+- `dataset` : A Kaggle Dataset Name or Key
+  - `kaggle-fv` Kaggle Finger Vein Dataset
+  - `default` Default Dataset
+- `target` : Target Directory for Dataset [default: ./veingan-tmp/dataset/]
+
 
 #### Generate Images
 To train the model and generate synthetic images, use the following command and adjust the given parameters.

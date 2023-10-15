@@ -146,6 +146,7 @@ cython_debug/
 # Datasets
 /data
 /.data
+/veingan-tmp
 
 # Main Class
 main.py
