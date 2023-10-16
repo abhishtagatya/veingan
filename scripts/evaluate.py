@@ -1,14 +1,21 @@
 #!/usr/bin/python3
 
 import argparse
+import logging
 
-from veingan.core import dummy_function
+from veingan.core import evaluate_method_osvm_vgg
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Evaluate Images from VeinGAN")
-    parser.add_argument("target", help="Target Directory for Evaluation", type=str, default="/veingan-result")
+    parser.add_argument("method", help="Method of Evaluation", type=str)
+    parser.add_argument("target", help="Target Directory for Evaluation", type=str)
+    parser.add_argument("--configuration", help="Configuration for Selected Method")
     parser.add_argument("--verbose", help="Verbosity of Output")
 
     args = parser.parse_args()
 
-    dummy_function(args.target, args.verbose)  # Just for Demonstration
+    logging.basicConfig(level=logging.INFO)
+
+    if args.method == 'osvm+vgg':
+        configuration = args.configuration or 'osmv+vgg_full'
+        evaluate_method_osvm_vgg(data_dir=args.target, configuration=configuration)

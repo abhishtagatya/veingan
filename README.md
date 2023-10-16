@@ -42,7 +42,14 @@ Parameter
 #### Evaluate Result
 Evaluate the resulting synthetic images on to a more capable classifier to measure the deception rate.
 ```python
-python -m scripts.evaluate <target>
+python -m scripts.evaluate <method> <target> --configuration=<configuration>
 ```
+
+Parameter
+- `method` : Method of Evaluation
+  - `osvm+vgg` One-Class SVM + VGG Feature Ext. Novelty Score
+- `target` : Target Directory of Evaluation
+- `configuration` : Specific Configuration for Evaluation Method
+
 
 ### TBA
