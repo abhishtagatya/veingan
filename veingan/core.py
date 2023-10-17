@@ -52,13 +52,13 @@ def evaluate_method_osvm_vgg(data_dir: AnyStr, configuration: Dict):
 
     # Load Models
     CONFIGURATION = {
-        'osmv+vgg_full': './pretrained/osvm/osvm+vgg_scale-poly-0.01_full.sav',
-        'osmv+vgg_right': './pretrained/osvm/osvm+vgg_scale-poly-0.01_right.sav',
-        'osmv+vgg_left': './pretrained/osvm/osvm+vgg_scale-poly-0.01_left.sav',
+        'osvm+vgg_full': './pretrained/osvm/osvm+vgg_scale-poly-0.01_full.sav',
+        'osvm+vgg_right': './pretrained/osvm/osvm+vgg_scale-poly-0.01_right.sav',
+        'osvm+vgg_left': './pretrained/osvm/osvm+vgg_scale-poly-0.01_left.sav',
     }
-    CONFIGURATION['default'] = CONFIGURATION['osmv+vgg_full']
-    if configuration not in CONFIGURATION:
-        raise ValueError('Configuration for OSVM+VGG does not exist. Please check the documentation.')
+    CONFIGURATION['default'] = CONFIGURATION['osvm+vgg_full']
+    if configuration not in CONFIGURATION.keys():
+        raise ValueError(f'Configuration {configuration} for OSVM+VGG does not exist. Please check the documentation.')
 
     one_svm = OneSVM.load_pretrained(pretrained_file=CONFIGURATION[configuration])
 

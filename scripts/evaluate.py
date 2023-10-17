@@ -17,5 +17,5 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
     if args.method == 'osvm+vgg':
-        configuration = args.configuration or 'osmv+vgg_full'
+        configuration = args.configuration or 'osvm+vgg_full'
         evaluate_method_osvm_vgg(data_dir=args.target, configuration=configuration)
