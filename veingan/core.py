@@ -142,7 +142,7 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
             'lr_D': 1e-4,
             'beta1': 0.5
         },
-        "gan64_64+gpu_multi": {
+        "gan64_64+full": {
             'ngpu': 1,
             'worker': 2,
             'nc': 3,
@@ -150,7 +150,7 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
             'ngf': 64,
             'ndf': 64,
             'batch_size': 64,
-            'epoch': 20,
+            'epoch': 50,
             'lr_G': 1e-4,
             'lr_D': 1e-4,
             'beta1': 0.5
