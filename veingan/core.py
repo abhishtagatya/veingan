@@ -9,7 +9,8 @@ import numpy as np
 
 from veingan.dataloader.image import (
     SingleFingerVeinDataset,
-    SINGLE_FV_TRANSFORM,
+    SINGLE_FV3C_TRANSFORM,
+    SINGLE_FV1C_TRANSFORM,
 
     AnomalyImageDataset,
     EVALUATE_TRANSFORM
@@ -17,6 +18,7 @@ from veingan.dataloader.image import (
 from veingan.model.cnn import vgg_extract_features
 from veingan.model.svm import OneSVM
 from veingan.model.gan import dcgan_train
+from veingan.model.vae import vae_train, vae_generate_latent_space_out
 from veingan.util.download import download_kaggle_dataset
 from veingan.util.tabulate import create_evaluation_table
 
@@ -48,13 +50,62 @@ def download_dataset(dataset: AnyStr, target_dir: AnyStr):
     return
 
 
+def generate_method_vae(data_dir: AnyStr, target_dir: AnyStr, configuration: AnyStr):
+    """
+    Generate Images using VAE (Variational Auto Encoder) as Method
+
+    :param data_dir: Path to Dataset
+    :param target_dir: Path to Target
+    :param configuration: Configuration to pass model for generation
+    :return:
+    """
+
+    CONFIGURATION = {
+        'vae_64+cpu': {
+            'image_size': 64,
+            'batch_size': 64,
+            'input_dim': 4096,
+            'h1_dim': 1024,
+            'h2_dim': 512,
+            'latent_dim': 256,
+            'epoch': 100,
+            'ngpu': 0
+        },
+        'vae_64+gpu': {
+            'image_size': 64,
+            'batch_size': 64,
+            'input_dim': 4096,
+            'h1_dim': 1024,
+            'h2_dim': 512,
+            'latent_dim': 256,
+            'epoch': 100,
+            'ngpu': 1
+        }
+    }
+    CONFIGURATION['default'] = CONFIGURATION['vae_64+cpu']
+    if configuration not in CONFIGURATION.keys():
+        raise ValueError(f'Configuration {configuration} for VAE does not exist. Please check the documentation.')
+    CC = CONFIGURATION[configuration]
+
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+
+    device = torch.device("cuda:0" if (torch.cuda.is_available() and CC['ngpu'] > 0) else "cpu")
+    dataloader = SingleFingerVeinDataset.load_from_dir(data_dir=data_dir, transform=SINGLE_FV1C_TRANSFORM).to_dataloader(
+        batch_size=CC['batch_size'],
+    )
+    vae_model = vae_train(dataloader, CC, device)
+    vae_generate_latent_space_out(vae_model, target_dir, device, scale=1.0)
+    return
+
+
 def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: AnyStr):
     """
     Generate Images using GAN (Generative Adversarial Network) as Method
 
     :param data_dir: Path to Dataset
     :param target_dir: Path to Target
-    :param configuration: Configuration to pass model for evaluation
+    :param configuration: Configuration to pass model for generation
     :return:
     """
 
@@ -114,7 +165,7 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
         os.makedirs(target_dir)
 
     device = torch.device("cuda:0" if (torch.cuda.is_available() and CC['ngpu'] > 0) else "cpu")
-    dataloader = SingleFingerVeinDataset.load_from_dir(data_dir=data_dir, transform=SINGLE_FV_TRANSFORM).to_dataloader(
+    dataloader = SingleFingerVeinDataset.load_from_dir(data_dir=data_dir, transform=SINGLE_FV3C_TRANSFORM).to_dataloader(
         batch_size=CC['batch_size'],
         num_workers=CC['worker']
     )

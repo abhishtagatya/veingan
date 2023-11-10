@@ -3,6 +3,7 @@
 import argparse
 import logging
 
+from veingan.core import generate_method_vae
 from veingan.core import generate_method_gan
 
 if __name__ == '__main__':
@@ -16,7 +17,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
+    configuration = args.configuration or 'default'
+
+    if args.model == 'vae':
+        generate_method_vae(data_dir=args.dataset, target_dir=args.target, configuration= configuration)
 
     if args.model == 'gan':
-        configuration = args.configuration or 'gan64_64+cpu'
         generate_method_gan(data_dir=args.dataset, target_dir=args.target, configuration=configuration)

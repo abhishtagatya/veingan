@@ -4,7 +4,14 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
-SINGLE_FV_TRANSFORM = transforms.Compose([
+SINGLE_FV1C_TRANSFORM = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),
+    transforms.Resize((64, 64)),
+    transforms.CenterCrop((64, 64)),
+    transforms.ToTensor(),
+])
+
+SINGLE_FV3C_TRANSFORM = transforms.Compose([
     transforms.Resize((64, 64)),
     transforms.CenterCrop((64, 64)),
     transforms.ToTensor(),
