@@ -1,15 +1,22 @@
 import logging
+import os.path
 from typing import Any, AnyStr, Dict, List
 
+import random
+import torch
+import torchvision.utils as vutils
 import numpy as np
-import pandas as pd
 
 from veingan.dataloader.image import (
+    SingleFingerVeinDataset,
+    SINGLE_FV_TRANSFORM,
+
     AnomalyImageDataset,
     EVALUATE_TRANSFORM
 )
 from veingan.model.cnn import vgg_extract_features
 from veingan.model.svm import OneSVM
+from veingan.model.gan import dcgan_train
 from veingan.util.download import download_kaggle_dataset
 from veingan.util.tabulate import create_evaluation_table
 
@@ -41,7 +48,86 @@ def download_dataset(dataset: AnyStr, target_dir: AnyStr):
     return
 
 
-def evaluate_method_osvm_vgg(data_dir: AnyStr, configuration: Dict):
+def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: AnyStr):
+    """
+    Generate Images using GAN (Generative Adversarial Network) as Method
+
+    :param data_dir: Path to Dataset
+    :param target_dir: Path to Target
+    :param configuration: Configuration to pass model for evaluation
+    :return:
+    """
+
+    # Set random seed for reproducibility
+    manualSeed = 42
+    random.seed(manualSeed)
+    torch.manual_seed(manualSeed)
+    torch.use_deterministic_algorithms(True)  # Needed for reproducible results
+
+    CONFIGURATION = {
+        "gan64_64+cpu": {
+            'ngpu': 0,
+            'worker': 2,
+            'nc': 3,
+            'nz': 100,
+            'ngf': 64,
+            'ndf': 64,
+            'batch_size': 64,
+            'epoch': 20,
+            'lr_G': 1e-4,
+            'lr_D': 1e-4,
+            'beta1': 0.5
+        },
+        "gan64_64+gpu": {
+            'ngpu': 1,
+            'worker': 2,
+            'nc': 3,
+            'nz': 100,
+            'ngf': 64,
+            'ndf': 64,
+            'batch_size': 64,
+            'epoch': 20,
+            'lr_G': 1e-4,
+            'lr_D': 1e-4,
+            'beta1': 0.5
+        },
+        "gan64_64+gpu_multi": {
+            'ngpu': 1,
+            'worker': 2,
+            'nc': 3,
+            'nz': 100,
+            'ngf': 64,
+            'ndf': 64,
+            'batch_size': 64,
+            'epoch': 20,
+            'lr_G': 1e-4,
+            'lr_D': 1e-4,
+            'beta1': 0.5
+        },
+    }
+    CONFIGURATION['default'] = CONFIGURATION['gan64_64+cpu']
+    if configuration not in CONFIGURATION.keys():
+        raise ValueError(f'Configuration {configuration} for GAN does not exist. Please check the documentation.')
+    CC = CONFIGURATION[configuration]
+
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+
+    device = torch.device("cuda:0" if (torch.cuda.is_available() and CC['ngpu'] > 0) else "cpu")
+    dataloader = SingleFingerVeinDataset.load_from_dir(data_dir=data_dir, transform=SINGLE_FV_TRANSFORM).to_dataloader(
+        batch_size=CC['batch_size'],
+        num_workers=CC['worker']
+    )
+    generated_images = dcgan_train(dataloader, CC, device)
+
+    for i, gen_img in enumerate(generated_images[-1][-CC['batch_size']:]):
+        vutils.save_image(gen_img, f'{target_dir}/gan_{i}.png')
+        logging.info(f'Saved: {target_dir}/gan_{i}.png')
+
+    return
+
+
+def evaluate_method_osvm_vgg(data_dir: AnyStr, configuration: AnyStr):
     """
     Evaluation Method using OneSVM + VGG16 Novelty Score
 
