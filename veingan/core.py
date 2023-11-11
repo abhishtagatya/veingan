@@ -127,8 +127,8 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
             'ndf': 128,
             'batch_size': 64,
             'epoch': 20,
-            'lr_G': 1e-4,
-            'lr_D': 1e-4,
+            'lr_G': 1e-5,
+            'lr_D': 1e-5,
             'beta1': 0.5
         },
         "gan128_64+gpu": {
@@ -140,8 +140,8 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
             'ndf': 128,
             'batch_size': 64,
             'epoch': 20,
-            'lr_G': 1e-4,
-            'lr_D': 1e-4,
+            'lr_G': 1e-5,
+            'lr_D': 1e-5,
             'beta1': 0.5
         },
         "gan128_64+full": {
@@ -153,8 +153,8 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
             'ndf': 128,
             'batch_size': 64,
             'epoch': 50,
-            'lr_G': 1e-4,
-            'lr_D': 1e-4,
+            'lr_G': 1e-5,
+            'lr_D': 1e-5,
             'beta1': 0.5
         },
     }
