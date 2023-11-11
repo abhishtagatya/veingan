@@ -1,10 +1,11 @@
 import logging
-from typing import List, Dict
+from typing import List, Dict, AnyStr
 
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import Adam
+import torchvision.utils as vutils
 
 
 class DCGenerator_128d(nn.Module):
@@ -198,3 +199,296 @@ def dcgan_train(dataloader: DataLoader, configuration: Dict, device: torch.devic
 
     logging.info("Ending Training...")
     return img_list
+
+
+class CG_ConvolutionalBlock(nn.Module):
+
+    def __init__(
+            self,
+            in_channels: int,
+            out_channels: int,
+            is_downsampling: bool = True,
+            add_activation: bool = True,
+            **kwargs
+    ):
+        super(CG_ConvolutionalBlock, self).__init__()
+        if is_downsampling:
+            self.main = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, padding_mode="reflect", **kwargs),
+                nn.InstanceNorm2d(out_channels),
+                nn.ReLU(inplace=True) if add_activation else nn.Identity(),
+            )
+        else:
+            self.main = nn.Sequential(
+                nn.ConvTranspose2d(in_channels, out_channels, **kwargs),
+                nn.InstanceNorm2d(out_channels),
+                nn.ReLU(inplace=True) if add_activation else nn.Identity(),
+            )
+
+    def forward(self, x):
+        return self.main(x)
+
+
+class CG_ResidualBlock(nn.Module):
+
+    def __init__(self, channels: int):
+        super(CG_ResidualBlock, self).__init__()
+        self.main = nn.Sequential(
+            CG_ConvolutionalBlock(channels, channels, add_activation=True, kernel_size=3, padding=1),
+            CG_ConvolutionalBlock(channels, channels, add_activation=False, kernel_size=3, padding=1),
+        )
+
+    def forward(self, x):
+        return x + self.main(x)
+
+
+class CG_ConvINormPacked(nn.Module):
+
+    def __init__(self, in_channels: int, out_channels: int, stride: int):
+        super(CG_ConvINormPacked, self).__init__()
+        self.main = nn.Sequential(
+            nn.Conv2d(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=4,
+                stride=stride,
+                padding=1,
+                bias=True,
+                padding_mode="reflect",
+            ),
+            nn.InstanceNorm2d(out_channels),
+            nn.LeakyReLU(0.2, inplace=True),
+        )
+
+    def forward(self, x):
+        return self.main(x)
+
+
+class CGGenerator_128d(nn.Module):
+
+    def __init__(self, img_channels: int, num_features: int = 64, num_residuals: int = 9):
+        super(CGGenerator_128d, self).__init__()
+        self.initial_layer = nn.Sequential(
+            nn.Conv2d(
+                in_channels=img_channels,
+                out_channels=num_features,
+                kernel_size=7,
+                stride=1,
+                padding=3,
+                padding_mode="reflect",
+            ),
+            nn.ReLU(inplace=True),
+        )
+
+        self.downsampling_layers = nn.ModuleList(
+            [
+                CG_ConvolutionalBlock(
+                    in_channels=num_features,
+                    out_channels=num_features * 2,
+                    is_downsampling=True,
+                    kernel_size=3,
+                    stride=2,
+                    padding=1,
+                ),
+                CG_ConvolutionalBlock(
+                    in_channels=num_features * 2,
+                    out_channels=num_features * 4,
+                    is_downsampling=True,
+                    kernel_size=3,
+                    stride=2,
+                    padding=1,
+                ),
+            ]
+        )
+
+        self.residual_layers = nn.Sequential(
+            *[CG_ResidualBlock(num_features * 4) for _ in range(num_residuals)]
+        )
+
+        self.upsampling_layers = nn.ModuleList(
+            [
+                CG_ConvolutionalBlock(
+                    in_channels=num_features * 4,
+                    out_channels=num_features * 2,
+                    is_downsampling=False,
+                    kernel_size=3,
+                    stride=2,
+                    padding=1,
+                    output_padding=1,
+                ),
+                CG_ConvolutionalBlock(
+                    in_channels=num_features * 2,
+                    out_channels=num_features * 1,
+                    is_downsampling=False,
+                    kernel_size=3,
+                    stride=2,
+                    padding=1,
+                    output_padding=1,
+                ),
+            ]
+        )
+
+        self.last_layer = nn.Conv2d(
+            in_channels=num_features * 1,
+            out_channels=img_channels,
+            kernel_size=7,
+            stride=1,
+            padding=3,
+            padding_mode="reflect",
+        )
+
+    def forward(self, x):
+        x = self.initial_layer(x)
+        for layer in self.downsampling_layers:
+            x = layer(x)
+        x = self.residual_layers(x)
+        for layer in self.upsampling_layers:
+            x = layer(x)
+        return torch.tanh(self.last_layer(x))
+
+
+class CGDiscriminator_128d(nn.Module):
+
+    def __init__(self, in_channels=3, features=[64, 128, 256, 512]):
+        super(CGDiscriminator_128d, self).__init__()
+        self.initial_layer = nn.Sequential(
+            nn.Conv2d(
+                in_channels=in_channels,
+                out_channels=features[0],
+                kernel_size=4,
+                stride=2,
+                padding=1,
+                padding_mode="reflect",
+            ),
+            nn.LeakyReLU(0.2, inplace=True),
+        )
+
+        layers = []
+        in_channels = features[0]
+        for feature in features[1:]:
+            layers.append(
+                CG_ConvINormPacked(
+                    in_channels=in_channels,
+                    out_channels=feature,
+                    stride=1 if feature == features[-1] else 2,
+                )
+            )
+            in_channels = feature
+
+        layers.append(
+            nn.Conv2d(
+                in_channels=in_channels,
+                out_channels=1,
+                kernel_size=4,
+                stride=1,
+                padding=1,
+                padding_mode="reflect",
+            )
+        )
+        self.model = nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = self.initial_layer(x)
+        return torch.sigmoid(self.model(x))
+
+
+def cyclegan_prepare(
+        configuration: Dict, device: torch.device
+) -> (CGDiscriminator_128d, CGDiscriminator_128d, CGGenerator_128d, CGGenerator_128d):
+    d_X = CGDiscriminator_128d(in_channels=configuration['nc']).to(device)
+    d_Y = CGDiscriminator_128d(in_channels=configuration['nc']).to(device)
+    g_X = CGGenerator_128d(img_channels=configuration['nc'], num_residuals=configuration['nr']).to(device)
+    g_Y = CGGenerator_128d(img_channels=configuration['nc'], num_residuals=configuration['nr']).to(device)
+
+    return d_X, d_Y, g_X, g_Y
+
+
+def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Dict, device: torch.device):
+    d_X, d_Y, g_X, g_Y = cyclegan_prepare(configuration, device)
+    opt_D = Adam(list(d_X.parameters()) + list(d_Y.parameters()), lr=configuration['lr_D'],
+                 betas=(configuration['beta1'], 0.999))
+    opt_G = Adam(list(g_X.parameters()) + list(g_Y.parameters()), lr=configuration['lr_G'],
+                 betas=(configuration['beta1'], 0.999))
+
+    criterion_l1 = nn.L1Loss()
+    criterion_mse = nn.MSELoss()
+
+    scaler_D = torch.cuda.amp.GradScaler()
+    scaler_G = torch.cuda.amp.GradScaler()
+
+    logging.info('Start Training Loop...')
+    for epoch in range(configuration['epoch']):
+        X_reals, X_fakes = 0, 0
+        Y_reals, Y_fakes = 0, 0
+        for i, (x, y) in enumerate(dataloader, 0):
+            x = x.to(device)  # Finger
+            y = y.to(device)  # Support
+
+            with torch.cuda.amp.autocast():
+                fake_y = g_Y(x)
+                d_Y_real = d_Y(y)
+                d_Y_fake = d_Y(fake_y.detach())
+                Y_reals += d_Y_real.mean().item()
+                Y_fakes += d_Y_fake.mean().item()
+                d_Y_real_loss = criterion_mse(d_Y_real, torch.ones_like(d_Y_real))
+                d_Y_fake_loss = criterion_mse(d_Y_fake, torch.zeros_like(d_Y_fake))
+                d_Y_loss = d_Y_real_loss + d_Y_fake_loss
+
+                fake_x = g_X(y)
+                d_X_real = d_X(x)
+                d_X_fake = d_X(fake_x.detach())
+                X_reals += d_X_real.mean().item()
+                X_fakes += d_X_fake.mean().item()
+                d_X_real_loss = criterion_mse(d_X_real, torch.ones_like(d_X_real))
+                d_X_fake_loss = criterion_mse(d_X_fake, torch.zeros_like(d_X_fake))
+                d_X_loss = d_X_real_loss + d_X_fake_loss
+
+                d_loss = (d_Y_loss + d_X_loss) / 2
+
+            opt_D.zero_grad()
+            scaler_D.scale(d_loss).backward()
+            scaler_D.step(opt_D)
+            scaler_D.update()
+
+            with torch.cuda.amp.autocast():
+                d_Y_fake = d_Y(fake_y)
+                d_X_fake = d_X(fake_x)
+                g_Y_loss = criterion_mse(d_Y_fake, torch.ones_like(d_Y_fake))
+                g_X_loss = criterion_mse(d_X_fake, torch.ones_like(d_X_fake))
+
+                cycle_X = g_X(fake_y)
+                cycle_Y = g_Y(fake_x)
+                cycle_X_loss = criterion_l1(x, cycle_X)
+                cycle_Y_loss = criterion_l1(y, cycle_Y)
+
+                # identity_X = g_X(x)
+                # identity_Y = g_Y(y)
+                # identity_X_loss = criterion_l1(x, identity_X)
+                # identity_Y_loss = criterion_l1(y, identity_Y)
+
+                g_loss = (
+                    g_X_loss + g_Y_loss
+                    + (cycle_X_loss * configuration['lambda_cycle'])
+                    + (cycle_Y_loss * configuration['lambda_cycle'])
+                    # + (identity_X_loss * configuration['lambda_identity'])
+                    # + (identity_Y_loss * configuration['lambda_identity'])
+                )
+
+            opt_G.zero_grad()
+            scaler_G.scale(g_loss).backward()
+            scaler_D.step(opt_G)
+            scaler_G.update()
+
+            if i % 600 == 0:
+                logging.info(
+                    '[%d/%d][%d/%d] | G_X: %.4f D_X: %.4f G_Y: %.4f D_Y: %.4f |'
+                    % (
+                        epoch, configuration['epoch'], i, len(dataloader),
+                        g_X_loss, d_X_loss, g_Y_loss, d_Y_loss
+                    )
+                )
+                vutils.save_image(fake_x * 0.5 + 0.5, f"{target_dir}/finger_{i}.png")
+                vutils.save_image(fake_y * 0.5 + 0.5, f"{target_dir}/support_{i}.png")
+
+    logging.info('End Training...')
+    return

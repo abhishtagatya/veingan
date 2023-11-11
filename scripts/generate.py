@@ -3,8 +3,11 @@
 import argparse
 import logging
 
-from veingan.core import generate_method_vae
-from veingan.core import generate_method_gan
+from veingan.core import (
+    generate_method_vae,
+    generate_method_gan,
+    generate_method_cyclegan
+)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate Images using VeinGAN")
@@ -20,7 +23,10 @@ if __name__ == '__main__':
     configuration = args.configuration or 'default'
 
     if args.model == 'vae':
-        generate_method_vae(data_dir=args.dataset, target_dir=args.target, configuration= configuration)
+        generate_method_vae(data_dir=args.dataset, target_dir=args.target, configuration=configuration)
 
     if args.model == 'gan':
         generate_method_gan(data_dir=args.dataset, target_dir=args.target, configuration=configuration)
+
+    if args.model == 'cyclegan':
+        generate_method_cyclegan(data_dir=args.dataset, target_dir=args.target, configuration=configuration)
