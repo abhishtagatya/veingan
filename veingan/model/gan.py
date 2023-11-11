@@ -476,7 +476,7 @@ def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
 
             opt_G.zero_grad()
             scaler_G.scale(g_loss).backward()
-            scaler_D.step(opt_G)
+            scaler_G.step(opt_G)
             scaler_G.update()
 
             if i % 600 == 0:

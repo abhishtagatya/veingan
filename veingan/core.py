@@ -199,7 +199,7 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
     CONFIGURATION = {
         "cyclegan128_1+cpu": {
             'ngpu': 0,
-            'worker': 4,
+            'worker': 2,
             'nc': 3,
             'nr': 9,
             'batch_size': 1,
@@ -212,7 +212,7 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
         },
         "cyclegan128_1+gpu": {
             'ngpu': 1,
-            'worker': 4,
+            'worker': 2,
             'nc': 3,
             'nr': 9,
             'batch_size': 1,
@@ -225,7 +225,7 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
         },
         "cyclegan128_1+full": {
             'ngpu': 1,
-            'worker': 4,
+            'worker': 2,
             'nc': 3,
             'nr': 9,
             'batch_size': 1,
