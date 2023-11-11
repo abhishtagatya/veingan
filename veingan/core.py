@@ -118,39 +118,39 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
     torch.use_deterministic_algorithms(True)  # Needed for reproducible results
 
     CONFIGURATION = {
-        "gan64_64+cpu": {
+        "gan128_64+cpu": {
             'ngpu': 0,
             'worker': 2,
             'nc': 3,
             'nz': 100,
-            'ngf': 64,
-            'ndf': 64,
+            'ngf': 128,
+            'ndf': 128,
             'batch_size': 64,
             'epoch': 20,
             'lr_G': 1e-4,
             'lr_D': 1e-4,
             'beta1': 0.5
         },
-        "gan64_64+gpu": {
+        "gan128_64+gpu": {
             'ngpu': 1,
             'worker': 2,
             'nc': 3,
             'nz': 100,
-            'ngf': 64,
-            'ndf': 64,
+            'ngf': 128,
+            'ndf': 128,
             'batch_size': 64,
             'epoch': 20,
             'lr_G': 1e-4,
             'lr_D': 1e-4,
             'beta1': 0.5
         },
-        "gan64_64+full": {
+        "gan128_64+full": {
             'ngpu': 1,
             'worker': 2,
             'nc': 3,
             'nz': 100,
-            'ngf': 64,
-            'ndf': 64,
+            'ngf': 128,
+            'ndf': 128,
             'batch_size': 64,
             'epoch': 50,
             'lr_G': 1e-4,
@@ -158,7 +158,7 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
             'beta1': 0.5
         },
     }
-    CONFIGURATION['default'] = CONFIGURATION['gan64_64+cpu']
+    CONFIGURATION['default'] = CONFIGURATION['gan128_64+cpu']
     if configuration not in CONFIGURATION.keys():
         raise ValueError(f'Configuration {configuration} for GAN does not exist. Please check the documentation.')
     CC = CONFIGURATION[configuration]
