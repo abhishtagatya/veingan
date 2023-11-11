@@ -61,28 +61,30 @@ def generate_method_vae(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
     """
 
     CONFIGURATION = {
-        'vae_64+cpu': {
-            'image_size': 64,
+        'vae_128+cpu': {
+            'image_size': 128,
             'batch_size': 64,
-            'input_dim': 4096,
-            'h1_dim': 1024,
-            'h2_dim': 512,
+            'input_dim': 128 * 128,
+            'h1_dim': 4096,
+            'h2_dim': 1024,
+            'h3_dim': 512,
             'latent_dim': 256,
             'epoch': 100,
             'ngpu': 0
         },
-        'vae_64+gpu': {
-            'image_size': 64,
+        'vae_128+gpu': {
+            'image_size': 128,
             'batch_size': 64,
-            'input_dim': 4096,
-            'h1_dim': 1024,
-            'h2_dim': 512,
+            'input_dim': 128 * 128,
+            'h1_dim': 4096,
+            'h2_dim': 1024,
+            'h3_dim': 512,
             'latent_dim': 256,
             'epoch': 100,
             'ngpu': 1
         }
     }
-    CONFIGURATION['default'] = CONFIGURATION['vae_64+cpu']
+    CONFIGURATION['default'] = CONFIGURATION['vae_128+cpu']
     if configuration not in CONFIGURATION.keys():
         raise ValueError(f'Configuration {configuration} for VAE does not exist. Please check the documentation.')
     CC = CONFIGURATION[configuration]

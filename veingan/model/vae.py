@@ -9,15 +9,16 @@ import torchvision.utils as vutils
 import numpy as np
 
 
-class VariationalAE_Flat64d(nn.Module):
+class VariationalAE_Flat128d(nn.Module):
 
     def __init__(self,
                  device: torch.device,
-                 input_dim: int = 4096,
-                 hidden_dim_1: int = 1024,
-                 hidden_dim_2: int = 512,
+                 input_dim: int = 128 * 128,
+                 hidden_dim_1: int = 4096,
+                 hidden_dim_2: int = 1024,
+                 hidden_dim_3: int = 512,
                  latent_dim: int = 256):
-        super(VariationalAE_Flat64d, self).__init__()
+        super(VariationalAE_Flat128d, self).__init__()
 
         self.device = device
 
@@ -27,8 +28,10 @@ class VariationalAE_Flat64d(nn.Module):
             nn.LeakyReLU(0.2),
             nn.Linear(hidden_dim_1, hidden_dim_2),
             nn.LeakyReLU(0.2),
-            nn.Linear(hidden_dim_2, latent_dim),
-            nn.LeakyReLU(0.2)
+            nn.Linear(hidden_dim_2, hidden_dim_3),
+            nn.LeakyReLU(0.2),
+            nn.Linear(hidden_dim_3, latent_dim),
+            nn.LeakyReLU(0.2),
         )
 
         # latent mean and variance
@@ -39,7 +42,9 @@ class VariationalAE_Flat64d(nn.Module):
         self.decoder = nn.Sequential(
             nn.Linear(2, latent_dim),
             nn.LeakyReLU(0.2),
-            nn.Linear(latent_dim, hidden_dim_2),
+            nn.Linear(latent_dim, hidden_dim_3),
+            nn.LeakyReLU(0.2),
+            nn.Linear(hidden_dim_3, hidden_dim_2),
             nn.LeakyReLU(0.2),
             nn.Linear(hidden_dim_2, hidden_dim_1),
             nn.LeakyReLU(0.2),
@@ -74,11 +79,12 @@ def vae_loss_function(x, x_hat, mean, log_var):
     return reproduction_loss + KLD
 
 
-def vae_train(dataloader: DataLoader, configuration: Dict, device: torch.device) -> VariationalAE_Flat64d:
-    model = VariationalAE_Flat64d(
+def vae_train(dataloader: DataLoader, configuration: Dict, device: torch.device) -> VariationalAE_Flat128d:
+    model = VariationalAE_Flat128d(
         input_dim=configuration['input_dim'],
         hidden_dim_1=configuration['h1_dim'],
         hidden_dim_2=configuration['h2_dim'],
+        hidden_dim_3=configuration['h3_dim'],
         latent_dim=configuration['latent_dim'],
         device=device
     ).to(device)
@@ -121,12 +127,12 @@ def vae_train(dataloader: DataLoader, configuration: Dict, device: torch.device)
 
 
 def vae_generate_latent_space_out(
-        model: VariationalAE_Flat64d,
+        model: VariationalAE_Flat128d,
         target_dir: AnyStr,
         device: torch.device,
         scale: float = 5.0,
         n: int = 25,
-        image_size: int = 64
+        image_size: int = 128
 ):
     grid_x = np.linspace(-scale, scale, n)
     grid_y = np.linspace(-scale, scale, n)[::-1]

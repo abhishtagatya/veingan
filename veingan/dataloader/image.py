@@ -6,8 +6,8 @@ from torchvision import transforms
 
 SINGLE_FV1C_TRANSFORM = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
-    transforms.Resize((64, 64)),
-    transforms.CenterCrop((64, 64)),
+    transforms.Resize((128, 128)),
+    transforms.CenterCrop((128, 128)),
     transforms.ToTensor(),
 ])
 
