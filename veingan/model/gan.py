@@ -181,7 +181,7 @@ def dcgan_train(dataloader: DataLoader, configuration: Dict, device: torch.devic
 
             # Output training stats
             if i % 32 == 0:
-                logging.info('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\tD(x): %.4f\tD(G(z)): %.4f / %.4f'
+                logging.info('[%d/%d][%d/%d] | D: %.4f G: %.4f D(x): %.4f D(G(z)): %.4f / %.4f |'
                              % (epoch, configuration['epoch'], i, len(dataloader),
                                 errD.item(), errG.item(), D_x, D_G_z1, D_G_z2))
 
@@ -403,6 +403,32 @@ def cyclegan_prepare(
     return d_X, d_Y, g_X, g_Y
 
 
+def cyclegan_save(
+        model: nn.Module,
+        optimizer: torch.optim.Optimizer,
+        save_as: AnyStr = 'model.pth.tar'
+):
+    checkpoint = {'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}
+    return torch.save(checkpoint, save_as)
+
+
+def cyclegan_load(
+        checkpoint_file: AnyStr,
+        model: nn.Module,
+        optimizer: torch.optim.Optimizer,
+        device: torch.device,
+        lr: float
+):
+    checkpoint = torch.load(checkpoint_file, map_location=device)
+    model.load_state_dict(checkpoint['state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
+    return model, optimizer
+
+
 def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Dict, device: torch.device):
     d_X, d_Y, g_X, g_Y = cyclegan_prepare(configuration, device)
     opt_D = Adam(list(d_X.parameters()) + list(d_Y.parameters()), lr=configuration['lr_D'],
@@ -467,11 +493,11 @@ def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
                 identity_Y_loss = criterion_l1(y, identity_Y)
 
                 g_loss = (
-                    g_X_loss + g_Y_loss
-                    + (cycle_X_loss * configuration['lambda_cycle'])
-                    + (cycle_Y_loss * configuration['lambda_cycle'])
-                    + (identity_X_loss * configuration['lambda_identity'])
-                    + (identity_Y_loss * configuration['lambda_identity'])
+                        g_X_loss + g_Y_loss
+                        + (cycle_X_loss * configuration['lambda_cycle'])
+                        + (cycle_Y_loss * configuration['lambda_cycle'])
+                        + (identity_X_loss * configuration['lambda_identity'])
+                        + (identity_Y_loss * configuration['lambda_identity'])
                 )
 
             opt_G.zero_grad()
@@ -481,7 +507,7 @@ def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
 
             if i % 600 == 0:
                 logging.info(
-                    '[%d/%d][%d/%d] | G_X: %.4f D_X: %.4f G_Y: %.4f D_Y: %.4f G: %.4f D: %.4f|'
+                    '[%d/%d][%d/%d] | G_X: %.4f D_X: %.4f G_Y: %.4f D_Y: %.4f G: %.4f D: %.4f |'
                     % (
                         epoch, configuration['epoch'], i, len(dataloader),
                         g_X_loss, d_X_loss, g_Y_loss, d_Y_loss,
@@ -491,5 +517,34 @@ def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
                 vutils.save_image(fake_x * 0.5 + 0.5, f"{target_dir}/finger_{i}.png")
                 vutils.save_image(fake_y * 0.5 + 0.5, f"{target_dir}/support_{i}.png")
 
+            if configuration['save_model']:
+                cyclegan_save(g_X, opt_G, save_as='gX.pth.tar')
+                cyclegan_save(g_Y, opt_G, save_as='gY.pth.tar')
+                cyclegan_save(d_X, opt_D, save_as='dX.pth.tar')
+                cyclegan_save(d_Y, opt_D, save_as='dY.pth.tar')
+
     logging.info('End Training...')
+    return
+
+
+def cyclegan_infer(dataloader: DataLoader, target_dir: AnyStr, configuration: Dict, device: torch.device):
+    _, _, g_X, g_Y = cyclegan_prepare(configuration, device)
+    opt_G = Adam(list(g_X.parameters()) + list(g_Y.parameters()), lr=configuration['lr_G'],
+                 betas=(configuration['beta1'], 0.999))
+
+    g_X, opt_GX = cyclegan_load(configuration['gX_ckpt'], g_X, opt_G, device, configuration['lr'])
+    g_Y, opt_GY = cyclegan_load(configuration['gY_ckpt'], g_Y, opt_G, device, configuration['lr'])
+
+    logging.info('Starting Infer Mode...')
+    for i, (x, y) in enumerate(dataloader, 0):
+        x = x.to(device)  # Finger
+        y = y.to(device)  # Support
+
+        with torch.no_grad():
+            fake_y = g_Y(x)
+            fake_x = g_X(y)
+            vutils.save_image(fake_x * 0.5 + 0.5, f"{target_dir}/finger_{i}.png")
+            vutils.save_image(fake_y * 0.5 + 0.5, f"{target_dir}/support_{i}.png")
+
+    logging.info('Ending Infer...')
     return

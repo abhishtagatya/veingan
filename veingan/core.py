@@ -18,7 +18,7 @@ from veingan.dataloader.image import (
 )
 from veingan.model.cnn import vgg_extract_features
 from veingan.model.svm import OneSVM
-from veingan.model.gan import dcgan_train, cyclegan_train
+from veingan.model.gan import dcgan_train, cyclegan_train, cyclegan_infer
 from veingan.model.vae import vae_train, vae_generate_latent_space_out
 from veingan.util.download import download_kaggle_dataset
 from veingan.util.tabulate import create_evaluation_table
@@ -197,7 +197,8 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
     torch.manual_seed(manualSeed)
 
     CONFIGURATION = {
-        "cyclegan128_1+cpu": {
+        "cyclegan128_1+cpu+train": {
+            'train': 1,
             'ngpu': 0,
             'worker': 2,
             'nc': 3,
@@ -210,7 +211,8 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
             'lambda_cycle': 10.0,
             'lambda_identity': 1.0
         },
-        "cyclegan128_1+gpu": {
+        "cyclegan128_1+gpu+train": {
+            'train': 1,
             'ngpu': 1,
             'worker': 2,
             'nc': 3,
@@ -223,7 +225,8 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
             'lambda_cycle': 10.0,
             'lambda_identity': 1.0
         },
-        "cyclegan128_1+full": {
+        "cyclegan128_1+full+train": {
+            'train': 1,
             'ngpu': 1,
             'worker': 2,
             'nc': 3,
@@ -236,8 +239,22 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
             'lambda_cycle': 10.0,
             'lambda_identity': 1.0
         },
+        "cyclegan128_1+infer": {
+            'train': 0,
+            'ngpu': 1,
+            'worker': 2,
+            'nc': 3,
+            'nr': 9,
+            'batch_size': 1,
+            'lr_G': 1e-5,
+            'lr_D': 1e-5,
+            'dX_ckpt': './pretrained/cyclegan/dX.pth.tar',
+            'dY_ckpt': './pretrained/cyclegan/dY.pth.tar',
+            'gX_ckpt': './pretrained/cyclegan/gX.pth.tar',
+            'gY_ckpt': './pretrained/cyclegan/gY.pth.tar',
+        },
     }
-    CONFIGURATION['default'] = CONFIGURATION['cyclegan128_1+cpu']
+    CONFIGURATION['default'] = CONFIGURATION['cyclegan128_1+cpu+train']
     if configuration not in CONFIGURATION.keys():
         raise ValueError(f'Configuration {configuration} for CycleGAN does not exist. Please check the documentation.')
     CC = CONFIGURATION[configuration]
@@ -255,7 +272,11 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
         num_workers=CC['worker']
     )
 
-    cyclegan_train(dataloader, target_dir, CC, device)
+    if CC['train']:
+        cyclegan_train(dataloader, target_dir, CC, device)
+        return
+
+    cyclegan_infer(dataloader, target_dir, configuration, device)
     return
 
 

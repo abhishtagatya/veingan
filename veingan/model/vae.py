@@ -116,7 +116,7 @@ def vae_train(dataloader: DataLoader, configuration: Dict, device: torch.device)
 
         if (epoch + 1) % 10 == 0:
             logging.info(
-                "[%d/%d]\tAvg. Loss: %.4f" %
+                "[%d/%d] | Avg. Loss: %.4f |" %
                 (epoch + 1, configuration['epoch'],
                  overall_loss / (batch_idx * configuration['batch_size']))
             )
