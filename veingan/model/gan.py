@@ -461,17 +461,17 @@ def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
                 cycle_X_loss = criterion_l1(x, cycle_X)
                 cycle_Y_loss = criterion_l1(y, cycle_Y)
 
-                # identity_X = g_X(x)
-                # identity_Y = g_Y(y)
-                # identity_X_loss = criterion_l1(x, identity_X)
-                # identity_Y_loss = criterion_l1(y, identity_Y)
+                identity_X = g_X(x)
+                identity_Y = g_Y(y)
+                identity_X_loss = criterion_l1(x, identity_X)
+                identity_Y_loss = criterion_l1(y, identity_Y)
 
                 g_loss = (
                     g_X_loss + g_Y_loss
                     + (cycle_X_loss * configuration['lambda_cycle'])
                     + (cycle_Y_loss * configuration['lambda_cycle'])
-                    # + (identity_X_loss * configuration['lambda_identity'])
-                    # + (identity_Y_loss * configuration['lambda_identity'])
+                    + (identity_X_loss * configuration['lambda_identity'])
+                    + (identity_Y_loss * configuration['lambda_identity'])
                 )
 
             opt_G.zero_grad()
@@ -481,10 +481,11 @@ def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
 
             if i % 600 == 0:
                 logging.info(
-                    '[%d/%d][%d/%d] | G_X: %.4f D_X: %.4f G_Y: %.4f D_Y: %.4f |'
+                    '[%d/%d][%d/%d] | G_X: %.4f D_X: %.4f G_Y: %.4f D_Y: %.4f G: %.4f D: %.4f|'
                     % (
                         epoch, configuration['epoch'], i, len(dataloader),
-                        g_X_loss, d_X_loss, g_Y_loss, d_Y_loss
+                        g_X_loss, d_X_loss, g_Y_loss, d_Y_loss,
+                        g_loss, d_loss
                     )
                 )
                 vutils.save_image(fake_x * 0.5 + 0.5, f"{target_dir}/finger_{i}.png")
