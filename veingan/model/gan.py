@@ -517,11 +517,11 @@ def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
                 vutils.save_image(fake_x * 0.5 + 0.5, f"{target_dir}/finger_{i}.png")
                 vutils.save_image(fake_y * 0.5 + 0.5, f"{target_dir}/support_{i}.png")
 
-            if configuration['save_model']:
-                cyclegan_save(g_X, opt_G, save_as='gX.pth.tar')
-                cyclegan_save(g_Y, opt_G, save_as='gY.pth.tar')
-                cyclegan_save(d_X, opt_D, save_as='dX.pth.tar')
-                cyclegan_save(d_Y, opt_D, save_as='dY.pth.tar')
+        if configuration['save_model']:
+            cyclegan_save(g_X, opt_G, save_as='./pretrained/cyclegan/gX.pth.tar')
+            cyclegan_save(g_Y, opt_G, save_as='./pretrained/cyclegan/gY.pth.tar')
+            cyclegan_save(d_X, opt_D, save_as='./pretrained/cyclegan/dX.pth.tar')
+            cyclegan_save(d_Y, opt_D, save_as='./pretrained/cyclegan/dY.pth.tar')
 
     logging.info('End Training...')
     return

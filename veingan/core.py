@@ -204,12 +204,13 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
             'nc': 3,
             'nr': 9,
             'batch_size': 1,
-            'epoch': 20,
+            'epoch': 1,
             'lr_G': 1e-5,
             'lr_D': 1e-5,
             'beta1': 0.5,
             'lambda_cycle': 10.0,
-            'lambda_identity': 1.0
+            'lambda_identity': 1.0,
+            'save_model': True
         },
         "cyclegan128_1+gpu+train": {
             'train': 1,
@@ -223,7 +224,8 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
             'lr_D': 1e-5,
             'beta1': 0.5,
             'lambda_cycle': 10.0,
-            'lambda_identity': 1.0
+            'lambda_identity': 1.0,
+            'save_model': True
         },
         "cyclegan128_1+full+train": {
             'train': 1,
@@ -237,7 +239,8 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
             'lr_D': 1e-5,
             'beta1': 0.5,
             'lambda_cycle': 10.0,
-            'lambda_identity': 1.0
+            'lambda_identity': 1.0,
+            'save_model': True
         },
         "cyclegan128_1+infer": {
             'train': 0,
@@ -252,6 +255,7 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
             'dY_ckpt': './pretrained/cyclegan/dY.pth.tar',
             'gX_ckpt': './pretrained/cyclegan/gX.pth.tar',
             'gY_ckpt': './pretrained/cyclegan/gY.pth.tar',
+            'save_model': False
         },
     }
     CONFIGURATION['default'] = CONFIGURATION['cyclegan128_1+cpu+train']
