@@ -204,7 +204,7 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
             'nc': 3,
             'nr': 9,
             'batch_size': 1,
-            'epoch': 1,
+            'epoch': 20,
             'lr_G': 1e-5,
             'lr_D': 1e-5,
             'beta1': 0.5,

@@ -493,11 +493,11 @@ def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
                 identity_Y_loss = criterion_l1(y, identity_Y)
 
                 g_loss = (
-                        g_X_loss + g_Y_loss
-                        + (cycle_X_loss * configuration['lambda_cycle'])
-                        + (cycle_Y_loss * configuration['lambda_cycle'])
-                        + (identity_X_loss * configuration['lambda_identity'])
-                        + (identity_Y_loss * configuration['lambda_identity'])
+                    g_X_loss + g_Y_loss
+                    + (cycle_X_loss * configuration['lambda_cycle'])
+                    + (cycle_Y_loss * configuration['lambda_cycle'])
+                    + (identity_X_loss * configuration['lambda_identity'])
+                    + (identity_Y_loss * configuration['lambda_identity'])
                 )
 
             opt_G.zero_grad()
