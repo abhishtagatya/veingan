@@ -59,7 +59,7 @@ class DualFingerVeinDataset(Dataset):
 
         if len(self.data) != len(self.data_p):
             raise ValueError(
-                f'Inconsistent length between {self.data} ({len(self.data)}) and {self.data_p} ({len(self.data_p)}). '
+                f'Inconsistent length between `data` ({len(self.data)}) and `data_p` ({len(self.data_p)}). '
             )
 
     def __len__(self):
