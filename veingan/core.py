@@ -251,6 +251,7 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
             'batch_size': 1,
             'lr_G': 1e-5,
             'lr_D': 1e-5,
+            'beta1': 0.5,
             'dX_ckpt': './pretrained/cyclegan/dX.pth.tar',
             'dY_ckpt': './pretrained/cyclegan/dY.pth.tar',
             'gX_ckpt': './pretrained/cyclegan/gX.pth.tar',
@@ -280,7 +281,7 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
         cyclegan_train(dataloader, target_dir, CC, device)
         return
 
-    cyclegan_infer(dataloader, target_dir, configuration, device)
+    cyclegan_infer(dataloader, target_dir, CC, device)
     return
 
 

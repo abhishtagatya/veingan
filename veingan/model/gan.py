@@ -395,6 +395,7 @@ class CGDiscriminator_128d(nn.Module):
 def cyclegan_prepare(
         configuration: Dict, device: torch.device
 ) -> (CGDiscriminator_128d, CGDiscriminator_128d, CGGenerator_128d, CGGenerator_128d):
+    print(configuration)
     d_X = CGDiscriminator_128d(in_channels=configuration['nc']).to(device)
     d_Y = CGDiscriminator_128d(in_channels=configuration['nc']).to(device)
     g_X = CGGenerator_128d(img_channels=configuration['nc'], num_residuals=configuration['nr']).to(device)
@@ -518,10 +519,10 @@ def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
                 vutils.save_image(fake_y * 0.5 + 0.5, f"{target_dir}/support_{i}.png")
 
         if configuration['save_model']:
-            cyclegan_save(g_X, opt_G, save_as='./pretrained/cyclegan/gX.pth.tar')
-            cyclegan_save(g_Y, opt_G, save_as='./pretrained/cyclegan/gY.pth.tar')
-            cyclegan_save(d_X, opt_D, save_as='./pretrained/cyclegan/dX.pth.tar')
-            cyclegan_save(d_Y, opt_D, save_as='./pretrained/cyclegan/dY.pth.tar')
+            cyclegan_save(g_X, opt_G, save_as=f"./pretrained/cyclegan/gX_{configuration['epoch']}.pth.tar")
+            cyclegan_save(g_Y, opt_G, save_as=f"./pretrained/cyclegan/gY_{configuration['epoch']}.pth.tar")
+            cyclegan_save(d_X, opt_D, save_as=f"./pretrained/cyclegan/dX_{configuration['epoch']}.pth.tar")
+            cyclegan_save(d_Y, opt_D, save_as=f"./pretrained/cyclegan/dY_{configuration['epoch']}.pth.tar")
 
     logging.info('End Training...')
     return
@@ -532,8 +533,8 @@ def cyclegan_infer(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
     opt_G = Adam(list(g_X.parameters()) + list(g_Y.parameters()), lr=configuration['lr_G'],
                  betas=(configuration['beta1'], 0.999))
 
-    g_X, opt_GX = cyclegan_load(configuration['gX_ckpt'], g_X, opt_G, device, configuration['lr'])
-    g_Y, opt_GY = cyclegan_load(configuration['gY_ckpt'], g_Y, opt_G, device, configuration['lr'])
+    g_X, opt_GX = cyclegan_load(configuration['gX_ckpt'], g_X, opt_G, device, configuration['lr_G'])
+    g_Y, opt_GY = cyclegan_load(configuration['gY_ckpt'], g_Y, opt_G, device, configuration['lr_G'])
 
     logging.info('Starting Infer Mode...')
     for i, (x, y) in enumerate(dataloader, 0):
@@ -545,6 +546,8 @@ def cyclegan_infer(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
             fake_x = g_X(y)
             vutils.save_image(fake_x * 0.5 + 0.5, f"{target_dir}/finger_{i}.png")
             vutils.save_image(fake_y * 0.5 + 0.5, f"{target_dir}/support_{i}.png")
+            logging.info(f'Saving {target_dir}/finger_{i}.png')
+            logging.info(f'Saving {target_dir}/support_{i}.png')
 
     logging.info('Ending Infer...')
     return
