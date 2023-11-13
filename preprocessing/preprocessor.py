@@ -4,8 +4,7 @@ import os
 import cv2
 import numpy as np
 
-from preprocessing.utils import (binary_thresholder, clahe, gaussian_blur,
-                                 invert, skeletonize_image)
+from preprocessing.utils import *
 
 
 def isolate_finger(thresh_image):
@@ -40,6 +39,25 @@ def preprocess_single(img, clip_limit=16, grid_size=(8, 8), gaussian_blur_ksize=
     return skeleton
 
 
+def preprocess_v2(img, clip_limit=32, grid_size=(4, 4), gaussian_blur_ksize=5, gaussian_blur_sigma=1,
+                  clip_limit_2=10, grid_size_2=(12, 12), block_size=63, c=5):
+    img_eq = clahe(img, clip_limit, grid_size)
+    img_eq2 = clahe(img_eq, clip_limit, grid_size)
+    img_eq3 = clahe(img_eq2, clip_limit, grid_size)
+    img_eq = img_eq3
+    gaussian_blur_img = gaussian_blur(
+        img_eq, gaussian_blur_ksize, gaussian_blur_sigma)
+    inverted_gaussian_img = invert(gaussian_blur_img)
+    inverted_gaussian_img_cl = clahe(
+        inverted_gaussian_img, clip_limit_2, grid_size_2)
+    inverted_gaussian_img_eq = histogram_equalization(inverted_gaussian_img_cl)
+    img_thresh = adaptive_threshold(
+        inverted_gaussian_img_eq, block_size=block_size, c=c)
+    img_skeleton = skeletonize_image(img_thresh)
+    isolate_finger_img = isolate_finger(img_skeleton)
+    return isolate_finger_img
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
@@ -59,7 +77,7 @@ if __name__ == '__main__':
 
     if not os.path.isdir(input_path) and os.path.isfile(input_path) and not recursive:
         img = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
-        img_preprocessed = preprocess_single(img)
+        img_preprocessed = preprocess_v2(img)
         input_filename = os.path.basename(input_path)
         input_filename, input_file_extension = os.path.splitext(
             input_filename)
@@ -76,7 +94,7 @@ if __name__ == '__main__':
                 if file.endswith('.png') or file.endswith('.jpg') or file.endswith('.jpeg') or file.endswith('.bmp'):
                     img = cv2.imread(os.path.join(root, file),
                                      cv2.IMREAD_GRAYSCALE)
-                    img_preprocessed = preprocess_single(img)
+                    img_preprocessed = preprocess_v2(img)
 
                     output_filename = file[:file.rfind(
                         '.')] + '_skeleton' + file[file.rfind('.'):]
