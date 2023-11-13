@@ -12,6 +12,12 @@ def binary_thresholder(img, threshold=127):
     return img_bin
 
 
+def adaptive_threshold(img, block_size=63, c=5):
+    img = cv2.adaptiveThreshold(
+        img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, block_size, c)
+    return img
+
+
 def clahe(img, clip_limit=2.0, tile_grid_size=(8, 8)):
     clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
     return clahe.apply(img)
