@@ -395,7 +395,6 @@ class CGDiscriminator_128d(nn.Module):
 def cyclegan_prepare(
         configuration: Dict, device: torch.device
 ) -> (CGDiscriminator_128d, CGDiscriminator_128d, CGGenerator_128d, CGGenerator_128d):
-    print(configuration)
     d_X = CGDiscriminator_128d(in_channels=configuration['nc']).to(device)
     d_Y = CGDiscriminator_128d(in_channels=configuration['nc']).to(device)
     g_X = CGGenerator_128d(img_channels=configuration['nc'], num_residuals=configuration['nr']).to(device)
@@ -515,14 +514,16 @@ def cyclegan_train(dataloader: DataLoader, target_dir: AnyStr, configuration: Di
                         g_loss, d_loss
                     )
                 )
+
+            if i % 50 == 0:
                 vutils.save_image(fake_x * 0.5 + 0.5, f"{target_dir}/finger_{i}.png")
                 vutils.save_image(fake_y * 0.5 + 0.5, f"{target_dir}/support_{i}.png")
 
-        if configuration['save_model']:
-            cyclegan_save(g_X, opt_G, save_as=f"./pretrained/cyclegan/gX_{configuration['epoch']}.pth.tar")
-            cyclegan_save(g_Y, opt_G, save_as=f"./pretrained/cyclegan/gY_{configuration['epoch']}.pth.tar")
-            cyclegan_save(d_X, opt_D, save_as=f"./pretrained/cyclegan/dX_{configuration['epoch']}.pth.tar")
-            cyclegan_save(d_Y, opt_D, save_as=f"./pretrained/cyclegan/dY_{configuration['epoch']}.pth.tar")
+        if configuration['save_model'] and (epoch + 1) % 10 == 0:
+            cyclegan_save(g_X, opt_G, save_as=f"{target_dir}/gX_{epoch}.pth.tar")
+            cyclegan_save(g_Y, opt_G, save_as=f"{target_dir}/gY_{epoch}.pth.tar")
+            cyclegan_save(d_X, opt_D, save_as=f"{target_dir}/dX_{epoch}.pth.tar")
+            cyclegan_save(d_Y, opt_D, save_as=f"{target_dir}/dY_{epoch}.pth.tar")
 
     logging.info('End Training...')
     return
