@@ -74,9 +74,11 @@ class VariationalAE_Flat128d(nn.Module):
 
 def vae_loss_function(x, x_hat, mean, log_var):
     if not any(torch.isfinite(x_hat.flatten())):
+        logging.error('X Hat Value')
         logging.error(x_hat)
 
-    if any(torch.isfinite(x.flatten())):
+    if not any(torch.isfinite(x.flatten())):
+        logging.error('X Value')
         logging.error(x)
 
     reproduction_loss = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
