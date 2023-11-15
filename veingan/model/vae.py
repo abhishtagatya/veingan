@@ -73,6 +73,10 @@ class VariationalAE_Flat128d(nn.Module):
 
 
 def vae_loss_function(x, x_hat, mean, log_var):
+    if not torch.isfinite(x_hat) or not torch.isfinite(x):
+        logging.error(x_hat)
+        logging.error(x)
+
     reproduction_loss = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
     KLD = - 0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
 
@@ -88,7 +92,7 @@ def vae_train(dataloader: DataLoader, configuration: Dict, device: torch.device)
         latent_dim=configuration['latent_dim'],
         device=device
     ).to(device)
-    optimizer = Adam(model.parameters(), lr=1e-3)
+    optimizer = Adam(model.parameters(), lr=1e-4)
 
     model.train()
     logging.info("Starting Training Loop...")
