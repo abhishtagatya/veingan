@@ -73,18 +73,21 @@ class VariationalAE_Flat128d(nn.Module):
 
 
 def vae_loss_function(x, x_hat, mean, log_var):
-    if not any(torch.isfinite(x_hat.flatten())):
-        logging.error('X Hat Value')
-        logging.error(x_hat)
+    try:
+        reproduction_loss = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
+        KLD = - 0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
 
-    if not any(torch.isfinite(x.flatten())):
-        logging.error('X Value')
-        logging.error(x)
+        return reproduction_loss + KLD
+    except:
+        if not any(torch.isfinite(x_hat.flatten())):
+            logging.error('X Hat Value')
+            logging.error(x_hat)
 
-    reproduction_loss = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
-    KLD = - 0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
+        if not any(torch.isfinite(x.flatten())):
+            logging.error('X Value')
+            logging.error(x)
 
-    return reproduction_loss + KLD
+        return
 
 
 def vae_train(dataloader: DataLoader, configuration: Dict, device: torch.device) -> VariationalAE_Flat128d:
