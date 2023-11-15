@@ -80,3 +80,48 @@ def thin_lines(image, iterations):
 def skeletonize_image(binary_image):
     skeleton = skeletonize(binary_image).astype(np.uint8)*255
     return skeleton
+
+
+def grabcut_segment_mask(grayscale_image):
+
+    image_width = 128
+    image_height = 128
+
+    rect_width = 128
+    rect_height = 105
+
+    # Calculate the top-left corner coordinates for the rectangle
+    x = (image_width - rect_width) // 2  # Aligning center horizontally
+    y = (image_height - rect_height) // 2  # Aligning center vertically
+
+    # Define the rectangle
+    rect = (x, y, rect_width, rect_height)
+
+    image = cv2.cvtColor(grayscale_image, cv2.COLOR_GRAY2BGR)
+
+    mask = np.zeros(grayscale_image.shape, np.uint8)
+
+    # Apply GrabCut with rect as the initial approximation
+    bgd_model = np.zeros((1, 65), np.float64)
+    fgd_model = np.zeros((1, 65), np.float64)
+    cv2.grabCut(image, mask, rect, bgd_model,
+                fgd_model, 5, cv2.GC_INIT_WITH_RECT)
+
+    return np.where((mask == 2) | (mask == 0), 0, 255).astype('uint8')
+
+
+def apply_mask(image, mask):
+    return cv2.bitwise_and(image, image, mask=mask)
+
+
+def remove_noise(binary_image):
+    # Apply erosion and dilation to remove noise
+    kernel = np.ones((3, 3), np.uint8)  # Kernel for morphological operations
+
+    # Erosion to remove small noise
+    eroded_image = cv2.erode(binary_image, kernel, iterations=1)
+
+    # Dilation to restore the structure while keeping noise removed
+    cleaned_image = cv2.dilate(eroded_image, kernel, iterations=1)
+
+    return cleaned_image

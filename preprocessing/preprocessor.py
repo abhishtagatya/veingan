@@ -41,6 +41,7 @@ def preprocess_single(img, clip_limit=16, grid_size=(8, 8), gaussian_blur_ksize=
 
 def preprocess_v2(img, clip_limit=32, grid_size=(4, 4), gaussian_blur_ksize=5, gaussian_blur_sigma=1,
                   clip_limit_2=10, grid_size_2=(12, 12), block_size=63, c=5):
+    imgs_grabcut_mask = grabcut_segment_mask(img)
     img_eq = clahe(img, clip_limit, grid_size)
     img_eq2 = clahe(img_eq, clip_limit, grid_size)
     img_eq3 = clahe(img_eq2, clip_limit, grid_size)
@@ -53,9 +54,10 @@ def preprocess_v2(img, clip_limit=32, grid_size=(4, 4), gaussian_blur_ksize=5, g
     inverted_gaussian_img_eq = histogram_equalization(inverted_gaussian_img_cl)
     img_thresh = adaptive_threshold(
         inverted_gaussian_img_eq, block_size=block_size, c=c)
-    img_skeleton = skeletonize_image(img_thresh)
-    isolate_finger_img = isolate_finger(img_skeleton)
-    return isolate_finger_img
+    img_thresh_grabcut_mask = apply_mask(img_thresh, imgs_grabcut_mask)
+    ing_thresh_grabcut_mask_cleaned = remove_noise(img_thresh_grabcut_mask)
+    img_skeleton = skeletonize_image(ing_thresh_grabcut_mask_cleaned)
+    return img_skeleton
 
 
 if __name__ == '__main__':
