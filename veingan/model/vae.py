@@ -79,11 +79,11 @@ def vae_loss_function(x, x_hat, mean, log_var):
 
         return reproduction_loss + KLD
     except:
-        if not any(torch.isfinite(x_hat.flatten())):
+        if not all(torch.isfinite(x_hat.flatten())):
             logging.error('X Hat Value')
             logging.error(x_hat)
 
-        if not any(torch.isfinite(x.flatten())):
+        if not all(torch.isfinite(x.flatten())):
             logging.error('X Value')
             logging.error(x)
 
