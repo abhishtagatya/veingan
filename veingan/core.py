@@ -178,7 +178,7 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
     )
     generated_images = dcgan_train(dataloader, CC, device)
 
-    for i, gen_img in enumerate(generated_images[-1][-CC['batch_size']:]):
+    for i, gen_img in enumerate(generated_images):
         vutils.save_image(gen_img, f'{target_dir}/gan_{i}.png')
         logging.info(f'Saved: {target_dir}/gan_{i}.png')
 
