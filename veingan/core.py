@@ -23,6 +23,9 @@ from veingan.model.gan import dcgan_train, cyclegan_train, cyclegan_infer
 from veingan.model.vae import vae_train, vae_generate_latent_space_out
 from veingan.util.download import download_kaggle_dataset
 from veingan.util.tabulate import create_evaluation_table
+from veingan.util.metric import (
+    calculate_entropy
+)
 
 
 def dummy_function(a, *args, **kwargs):
@@ -128,7 +131,7 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
             'ngf': 128,
             'ndf': 128,
             'batch_size': 64,
-            'epoch': 20,
+            'epoch': 1,
             'lr_G': 1e-5,
             'lr_D': 1e-5,
             'beta1': 0.5,
@@ -178,7 +181,7 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
     )
     generated_images = dcgan_train(dataloader, CC, device)
 
-    for i, gen_img in enumerate(generated_images):
+    for i, gen_img in enumerate(generated_images[-1][-CC['n_generate']:]):
         vutils.save_image(gen_img, f'{target_dir}/gan_{i}.png')
         logging.info(f'Saved: {target_dir}/gan_{i}.png')
 
@@ -256,10 +259,10 @@ def generate_method_cyclegan(data_dir: AnyStr, target_dir: AnyStr, configuration
             'lr_G': 1e-5,
             'lr_D': 1e-5,
             'beta1': 0.5,
-            'dX_ckpt': './pretrained/cyclegan/dX.pth.tar',
-            'dY_ckpt': './pretrained/cyclegan/dY.pth.tar',
-            'gX_ckpt': './pretrained/cyclegan/gX.pth.tar',
-            'gY_ckpt': './pretrained/cyclegan/gY.pth.tar',
+            'dX_ckpt': './pretrained/cyclegan/dX_49.pth.tar',
+            'dY_ckpt': './pretrained/cyclegan/dY_49.pth.tar',
+            'gX_ckpt': './pretrained/cyclegan/gX_49.pth.tar',
+            'gY_ckpt': './pretrained/cyclegan/gY_49.pth.tar',
             'save_model': False
         },
     }
