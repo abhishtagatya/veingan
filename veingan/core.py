@@ -6,6 +6,7 @@ import random
 import torch
 import torchvision.utils as vutils
 import numpy as np
+import matplotlib.pyplot as plt
 
 from veingan.dataloader.image import (
     SingleFingerVeinDataset,
@@ -130,7 +131,8 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
             'epoch': 20,
             'lr_G': 1e-5,
             'lr_D': 1e-5,
-            'beta1': 0.5
+            'beta1': 0.5,
+            'n_generate': 128
         },
         "gan128_64+gpu": {
             'ngpu': 1,
@@ -143,7 +145,8 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
             'epoch': 20,
             'lr_G': 1e-5,
             'lr_D': 1e-5,
-            'beta1': 0.5
+            'beta1': 0.5,
+            'n_generate': 128
         },
         "gan128_64+full": {
             'ngpu': 1,
@@ -156,7 +159,8 @@ def generate_method_gan(data_dir: AnyStr, target_dir: AnyStr, configuration: Any
             'epoch': 50,
             'lr_G': 1e-5,
             'lr_D': 1e-5,
-            'beta1': 0.5
+            'beta1': 0.5,
+            'n_generate': 128
         },
     }
     CONFIGURATION['default'] = CONFIGURATION['gan128_64+cpu']
@@ -321,4 +325,45 @@ def evaluate_method_osvm_vgg(data_dir: AnyStr, configuration: AnyStr):
         'Novelty %': f'{(len(ext_predict[ext_predict == 1]) / len(ext_predict)) * 100}%'
     })
     logging.info(f'\n{result_table}')
+    return
+
+
+def evaluate_method_entropy(data_dir: AnyStr, configuration: AnyStr):
+    """
+    Evaluation Method using Calculation of Entropy
+
+    :param data_dir: Path to Dataset
+    :param configuration: Configuration to load model for evaluation
+    :return:
+    """
+
+    # Load Models
+    CONFIGURATION = {
+        'entropy+plot': {
+            'fig_size': (8, 6),
+            'fig_save': 'entropy_fig.png'
+        },
+    }
+    CONFIGURATION['default'] = CONFIGURATION['osvm+vgg_full']
+    if configuration not in CONFIGURATION.keys():
+        raise ValueError(f'Configuration {configuration} for OSVM+VGG does not exist. Please check the documentation.')
+
+    CC = CONFIGURATION[configuration]
+
+    fig, ax = plt.figure(figsize=(CC['fig_size']))
+    fig_color = ['red', 'green', 'blue', 'yellow', 'purple']
+
+    data_dir_split = data_dir.split(';')
+    for idx, img_dir in enumerate(data_dir_split, 0):
+        dataset = SingleFingerVeinDataset.load_from_dir(img_dir, transform=FV1C_TRANSFORM)
+        dataset_dist = calculate_entropy(dataset)
+
+        ax.hist(dataset_dist, density=True, alpha=0.6, color=fig_color[idx % len(fig_color)], label=idx)
+
+        ax.xlabel('Score')
+        ax.ylabel('Entropy')
+        ax.legend(loc='upper right')
+        ax.title('Entropy Evaluation')
+
+    fig.savefig(CC['fig_save'])
     return

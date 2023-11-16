@@ -190,10 +190,11 @@ def dcgan_train(dataloader: DataLoader, configuration: Dict, device: torch.devic
             D_losses.append(errD.item())
 
             # Check how the generator is doing by saving G's output on fixed_noise
-            if (iters % 500 == 0) or ((epoch == configuration['epoch'] - 1) and (i == len(dataloader) - 1)):
-                with torch.no_grad():
-                    fake = netG(fixed_noise).detach().cpu()
-                img_list.append(fake)
+            if (epoch == configuration['epoch'] - 1) and (i == len(dataloader) - 1):
+                for _ in range(configuration['n_generate']):
+                    with torch.no_grad():
+                        fake = netG(fixed_noise).detach().cpu()
+                    img_list.append(fake)
 
             iters += 1
 
