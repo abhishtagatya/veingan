@@ -4,6 +4,7 @@ import argparse
 import logging
 
 from veingan.core import evaluate_method_osvm_vgg
+from veingan.core import evaluate_method_entropy
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Evaluate Images from VeinGAN")
@@ -15,7 +16,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
+    configuration = args.configuration or 'default'
 
     if args.method == 'osvm+vgg':
-        configuration = args.configuration or 'osvm+vgg_full'
         evaluate_method_osvm_vgg(data_dir=args.target, configuration=configuration)
+
+    if args.method == 'entropy':
+        evaluate_method_entropy(data_dir=args.target, configuration=configuration)
