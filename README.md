@@ -52,4 +52,6 @@ Parameter
 - `configuration` : Specific Configuration for Evaluation Method
 
 
-### TBA
+### Authors
+- Abhishta Gatya Adyatma [Email](mailto:abhishtagatya@yahoo.com)
+- Francisco Colino [Email](mailto:xcolino@stud.fit.vutbr.cz)
