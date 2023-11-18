@@ -25,7 +25,7 @@ def isolate_finger(thresh_image):
     return result_image
 
 
-def preprocess_single(img, clip_limit=16, grid_size=(8, 8), gaussian_blur_ksize=5, gaussian_blur_sigma=1, clip_limit_2=10, grid_size_2=(8, 8), threshold=110):
+def preprocess_contour(img, clip_limit=16, grid_size=(8, 8), gaussian_blur_ksize=5, gaussian_blur_sigma=1, clip_limit_2=10, grid_size_2=(8, 8), threshold=110):
     img_eq = clahe(img, clip_limit, grid_size)
     gaussian_blur_img = gaussian_blur(
         img_eq, gaussian_blur_ksize, gaussian_blur_sigma)
@@ -39,8 +39,8 @@ def preprocess_single(img, clip_limit=16, grid_size=(8, 8), gaussian_blur_ksize=
     return skeleton
 
 
-def preprocess_v2(img, clip_limit=32, grid_size=(4, 4), gaussian_blur_ksize=5, gaussian_blur_sigma=1,
-                  clip_limit_2=10, grid_size_2=(12, 12), block_size=63, c=5):
+def preprocess_grabcut(img, clip_limit=32, grid_size=(4, 4), gaussian_blur_ksize=5, gaussian_blur_sigma=1,
+                       clip_limit_2=10, grid_size_2=(12, 12), block_size=63, c=5):
     imgs_grabcut_mask = grabcut_segment_mask(img)
     img_eq = clahe(img, clip_limit, grid_size)
     img_eq2 = clahe(img_eq, clip_limit, grid_size)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     if not os.path.isdir(input_path) and os.path.isfile(input_path) and not recursive:
         img = cv2.imread(input_path, cv2.IMREAD_GRAYSCALE)
-        img_preprocessed = preprocess_v2(img)
+        img_preprocessed = preprocess_grabcut(img)
         input_filename = os.path.basename(input_path)
         input_filename, input_file_extension = os.path.splitext(
             input_filename)
