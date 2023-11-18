@@ -14,8 +14,11 @@ from veingan.dataloader.image import (
     FV1C_TRANSFORM,
     FV3C_TRANSFORM,
 
-    AnomalyImageDataset,
-    EVALUATE_TRANSFORM
+    EvaluateDataset,
+    EVALUATE_NUMPY_1C_TRANSFORM,
+    EVALUATE_NUMPY_3C_TRANSFORM,
+    EVALUATE_TENSOR_1C_TRANSFORM,
+    EVALUATE_TENSOR_3C_TRANSFORM,
 )
 from veingan.model.cnn import vgg_extract_features
 from veingan.model.svm import OneSVM
@@ -314,7 +317,9 @@ def evaluate_method_osvm_vgg(data_dir: AnyStr, configuration: AnyStr):
     one_svm = OneSVM.load_pretrained(pretrained_file=CONFIGURATION[configuration])
 
     # Load Test Loader
-    test_dataloader = AnomalyImageDataset.load_from_dir(data_dir=data_dir, transform=EVALUATE_TRANSFORM).to_dataloader()
+    test_dataloader = EvaluateDataset.load_from_dir(
+        data_dir=data_dir, transform=EVALUATE_TENSOR_3C_TRANSFORM
+    ).to_dataloader()
     ext_features = vgg_extract_features(dataloader=test_dataloader, flatten=True)
 
     # Evaluate

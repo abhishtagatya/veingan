@@ -1,8 +1,16 @@
 import glob
+import random
+
+import numpy as np
 from PIL import Image
 
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+
+
+def _as_numpy(image):
+    return np.array(image)
+
 
 FV1C_TRANSFORM = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
@@ -17,10 +25,30 @@ FV3C_TRANSFORM = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-EVALUATE_TRANSFORM = transforms.Compose([
-    transforms.Resize((64, 64)),  # Resize to a common size
-    transforms.ToTensor(),  # Convert to tensor
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize
+EVALUATE_TENSOR_1C_TRANSFORM = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),
+    transforms.Resize((128, 128)),
+    transforms.CenterCrop((128, 128)),
+    transforms.ToTensor(),
+])
+
+EVALUATE_TENSOR_3C_TRANSFORM = transforms.Compose([
+    transforms.Resize((128, 128)),
+    transforms.CenterCrop((128, 128)),
+    transforms.ToTensor(),
+])
+
+EVALUATE_NUMPY_1C_TRANSFORM = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),
+    transforms.Resize((128, 128)),
+    transforms.CenterCrop((128, 128)),
+    _as_numpy
+])
+
+EVALUATE_NUMPY_3C_TRANSFORM = transforms.Compose([
+    transforms.Resize((128, 128)),
+    transforms.CenterCrop((128, 128)),
+    _as_numpy
 ])
 
 
@@ -85,15 +113,19 @@ class DualFingerVeinDataset(Dataset):
         return img, img_p
 
 
-class AnomalyImageDataset(Dataset):
+class EvaluateDataset(Dataset):
 
     def __init__(self, data, transform=None):
         self.data = data
         self.transform = transform
 
     @classmethod
-    def load_from_dir(cls, data_dir, transform=None):
+    def load_from_dir(cls, data_dir, transform=None, shuffle: bool = False):
         dir_list = glob.glob(data_dir)
+
+        if shuffle:
+            random.shuffle(dir_list)
+
         return cls(data=dir_list, transform=transform)
 
     def to_dataloader(self, batch_size: int = 1, shuffle: bool = True):
