@@ -27,7 +27,9 @@ from veingan.model.vae import vae_train, vae_generate_latent_space_out
 from veingan.util.download import download_kaggle_dataset
 from veingan.util.tabulate import create_evaluation_table
 from veingan.util.metric import (
-    calculate_entropy
+    calculate_entropy,
+    calculate_laplacian_gradient,
+    calculate_inception_score
 )
 
 
@@ -352,26 +354,158 @@ def evaluate_method_entropy(data_dir: AnyStr, configuration: AnyStr):
             'fig_save': 'entropy_fig.png'
         },
     }
-    CONFIGURATION['default'] = CONFIGURATION['osvm+vgg_full']
+    CONFIGURATION['default'] = CONFIGURATION['entropy+plot']
     if configuration not in CONFIGURATION.keys():
-        raise ValueError(f'Configuration {configuration} for OSVM+VGG does not exist. Please check the documentation.')
+        raise ValueError(f'Configuration {configuration} for Entropy does not exist. Please check the documentation.')
 
     CC = CONFIGURATION[configuration]
 
-    fig, ax = plt.figure(figsize=(CC['fig_size']))
-    fig_color = ['red', 'green', 'blue', 'yellow', 'purple']
+    fig, ax = plt.subplots(figsize=CC['fig_size'])
+    fig_color = ['#30DDE3', '#C2E330', '#A130E3', '#E37530', '#764D8E']
 
     data_dir_split = data_dir.split(';')
-    for idx, img_dir in enumerate(data_dir_split, 0):
-        dataset = SingleFingerVeinDataset.load_from_dir(img_dir, transform=FV1C_TRANSFORM)
+    for idx, (img_dir_label) in enumerate(data_dir_split, 0):
+        img_dir, label = img_dir_label.split(':')
+        logging.info(f'Calculating Entropy for Directory : {img_dir}')
+
+        dataset = EvaluateDataset.load_from_dir(img_dir, transform=EVALUATE_NUMPY_3C_TRANSFORM, shuffle=True)
         dataset_dist = calculate_entropy(dataset)
 
-        ax.hist(dataset_dist, density=True, alpha=0.6, color=fig_color[idx % len(fig_color)], label=idx)
+        ax.hist(dataset_dist, density=True, alpha=0.7, color=fig_color[idx % len(fig_color)], label=label)
 
-        ax.xlabel('Score')
-        ax.ylabel('Entropy')
-        ax.legend(loc='upper right')
-        ax.title('Entropy Evaluation')
+    ax.set_xlabel('Entropy')
+    ax.set_ylabel('Score')
+    ax.legend(loc='upper right')
+    ax.set_title('Entropy Evaluation')
+
+    fig.savefig(CC['fig_save'])
+    return
+
+
+def evaluate_method_laplace(data_dir: AnyStr, configuration: AnyStr):
+    """
+    Evaluation Method using Calculation of Laplacian Gradient
+
+    :param data_dir: Path to Dataset
+    :param configuration: Configuration to load model for evaluation
+    :return:
+    """
+
+    # Load Models
+    CONFIGURATION = {
+        'lg+plot': {
+            'fig_size': (8, 6),
+            'fig_save': 'laplace_fig.png'
+        },
+    }
+    CONFIGURATION['default'] = CONFIGURATION['lg+plot']
+    if configuration not in CONFIGURATION.keys():
+        raise ValueError(f'Configuration {configuration} for Laplacian does not exist. Please check the documentation.')
+
+    CC = CONFIGURATION[configuration]
+
+    fig, ax = plt.subplots(figsize=CC['fig_size'])
+    fig_color = ['#30DDE3', '#C2E330', '#A130E3', '#E37530', '#764D8E']
+
+    data_dir_split = data_dir.split(';')
+    for idx, img_dir_label in enumerate(data_dir_split, 0):
+        img_dir, label = img_dir_label.split(':')
+        logging.info(f'Calculating Gradient for Directory : {img_dir}')
+
+        dataset = EvaluateDataset.load_from_dir(img_dir, transform=EVALUATE_NUMPY_3C_TRANSFORM, shuffle=True)
+        dataset_dist = calculate_laplacian_gradient(dataset)
+
+        ax.hist(dataset_dist, density=True, alpha=0.7, color=fig_color[idx % len(fig_color)], label=label)
+
+    ax.set_xlabel('Laplacian')
+    ax.set_ylabel('Score')
+    ax.legend(loc='upper right')
+    ax.set_title('Laplacian Gradient')
+
+    fig.savefig(CC['fig_save'])
+    return
+
+
+def evaluate_method_inception(data_dir: AnyStr, configuration: AnyStr):
+    """
+    Evaluation Method using Inception Score
+
+    :param data_dir: Path to Dataset
+    :param configuration: Configuration to load model for evaluation
+    :return:
+    """
+
+    # Load Models
+    CONFIGURATION = {
+        'inception+full': {
+            'batch_size': 1,
+            'n_eval': 128
+        },
+    }
+    CONFIGURATION['default'] = CONFIGURATION['inception+full']
+    if configuration not in CONFIGURATION.keys():
+        raise ValueError(f'Configuration {configuration} for Laplacian does not exist. Please check the documentation.')
+
+    CC = CONFIGURATION[configuration]
+
+    result = {}
+
+    data_dir_split = data_dir.split(';')
+    for idx, img_dir_label in enumerate(data_dir_split, 0):
+        img_dir, label = img_dir_label.split(':')
+        logging.info(f'Calculating Inception Score for Directory : {img_dir}')
+
+        dataset = EvaluateDataset.load_from_dir(img_dir, transform=EVALUATE_TENSOR_3C_TRANSFORM, shuffle=True)
+        dataloader = dataset.to_dataloader(batch_size=CC['batch_size'])
+        inception_score = calculate_inception_score(dataloader, n_eval=CC['n_eval'], batch_size=CC['batch_size'])
+
+        result[label] = inception_score
+
+    logging.info(create_evaluation_table(result))
+    return
+
+
+def evaluate_visualize_snapshot(data_dir: AnyStr, configuration: AnyStr):
+    """
+    Evaluation Method by Visualizing Snapshots
+
+    :param data_dir: Path to Dataset
+    :param configuration: Configuration to load model for evaluation
+    :return:
+    """
+
+    # Load Models
+    CONFIGURATION = {
+        'snap+plot': {
+            'fig_size': (8, 6),
+            'fig_save': 'snapshot.png'
+        },
+    }
+    CONFIGURATION['default'] = CONFIGURATION['snap+plot']
+    if configuration not in CONFIGURATION.keys():
+        raise ValueError(f'Configuration {configuration} for Snapshot does not exist. Please check the documentation.')
+
+    CC = CONFIGURATION[configuration]
+
+    data_dir_split = data_dir.split(';')
+    fig, ax = plt.subplots(8, len(data_dir_split), figsize=(len(data_dir_split), 5))
+
+    for idx, img_dir_label in enumerate(data_dir_split, 0):
+        img_dir, label = img_dir_label.split(':')
+        dataset = EvaluateDataset.load_from_dir(img_dir, transform=EVALUATE_NUMPY_1C_TRANSFORM, shuffle=True)
+
+        ax[0][idx].set_title(label)
+
+        ax[0][idx].imshow(dataset[0], cmap='gray')
+        ax[1][idx].imshow(dataset[1], cmap='gray')
+        ax[2][idx].imshow(dataset[2], cmap='gray')
+        ax[3][idx].imshow(dataset[3], cmap='gray')
+
+        ax[0][idx].axis('off')
+        ax[1][idx].axis('off')
+        ax[2][idx].axis('off')
+        ax[3][idx].axis('off')
+        continue
 
     fig.savefig(CC['fig_save'])
     return
